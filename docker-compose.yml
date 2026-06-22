@@ -1,4 +1,5 @@
 version: '2.1'
+
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
@@ -14,35 +15,31 @@ services:
     networks:
       elastic:
         aliases:
-         - es
+          - es
     healthcheck:
       test: ["CMD", "curl", "-f", "http://es:9200"]
-      interval: 1s
-      timeout: 1s
+      interval: 5s
+      timeout: 3s
       retries: 60
     ports:
-      - 127.0.0.1:9200:9200
+      - "127.0.0.1:9200:9200"
     mem_reservation: 4g
-
+    restart: unless-stopped
 
   snowstorm:
     image: snomedinternational/snowstorm:10.2.1
     container_name: nrces-snowstorm-api
-    restart: always
+    restart: unless-stopped
     depends_on:
       elasticsearch:
         condition: service_healthy
     entrypoint: java -Xms2g -Xmx4g --add-opens java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED -cp @/app/jib-classpath-file org.snomed.snowstorm.SnowstormApplication --elasticsearch.urls=http://es:9200
     volumes:
-      # Mount host ./imports directory read-only into the container at /import.
-      # Place RF2 (SNOMED CT, NRCeS National Extension), LOINC, ICD-10, HL7 FHIR R4
-      # and ABDM terminology files here; they can then be loaded via Snowstorm's
-      # import APIs by referencing paths under /import.
       - ./imports:/import:ro
     networks:
       elastic:
         aliases:
-         - snowstorm
+          - snowstorm
     ports:
       - "127.0.0.1:8080:8080"
 
@@ -51,18 +48,15 @@ services:
     container_name: nrces-snowstorm-browser
     depends_on:
       - snowstorm
-    links:
-      - snowstorm:snowstorm
     networks:
       - elastic
     environment:
       - API_HOST=http://snowstorm:8080/
     ports:
       - "127.0.0.1:8081:80"
-    restart: always
+    restart: unless-stopped
     profiles:
       - browser
-
 
 networks:
   elastic:
