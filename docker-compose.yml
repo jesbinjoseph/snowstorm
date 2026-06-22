@@ -34,6 +34,10 @@ services:
         condition: service_healthy
     entrypoint: java -Xms2g -Xmx4g --add-opens java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED -cp @/app/jib-classpath-file org.snomed.snowstorm.SnowstormApplication --elasticsearch.urls=http://es:9200
     volumes:
+      # Mount host ./imports directory read-only into the container at /import.
+      # Place RF2 (SNOMED CT, NRCeS National Extension), LOINC, ICD-10, HL7 FHIR R4
+      # and ABDM terminology files here; they can then be loaded via Snowstorm's
+      # import APIs by referencing paths under /import.
       - ./imports:/import:ro
     networks:
       elastic:
